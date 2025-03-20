@@ -1,80 +1,87 @@
-//your JS code here. If required.
-let player1 = "";
-let player2 = "";
-let currentPlayer = "";
-let board = ["", "", "", "", "", "", "", "", ""];
-let gameActive = true;
+document.getElementById("submit").addEventListener("click", function() {
+    player1Name = document.getElementById("player1").value.trim();
+    player2Name = document.getElementById("player2").value.trim();
+
+    if (player1Name === "" || player2Name === "") {
+        alert("Please enter names for both players.");
+        return;
+    }
+
+    document.querySelector(".message").textContent = `${player1Name}, you're up!`;
+    document.getElementById("game-board").classList.remove("hidden");
+    document.querySelector(".container").classList.add("hidden");
+
+    startGame();
+});
+
+let currentPlayer = "X";
+let cells = document.querySelectorAll(".cell");
+let player1Name = "";
+let player2Name = "";
 
 function startGame() {
-    player1 = document.getElementById("player1").value.trim();
-    player2 = document.getElementById("player2").value.trim();
-
-    if (player1 === "" || player2 === "") {
-        alert("Please enter both player names!");
-        return;
-    }
-
-    currentPlayer = player1;
-    document.getElementById("player-input").classList.add("hidden");
-    document.getElementById("game").classList.remove("hidden");
-    document.getElementById("message").innerText = `${currentPlayer}, you're up`;
-
-    createBoard();
-}
-
-function createBoard() {
-    const boardContainer = document.getElementById("board");
-    boardContainer.innerHTML = "";
-
-    board.forEach((cell, index) => {
-        const cellElement = document.createElement("div");
-        cellElement.classList.add("cell");
-        cellElement.setAttribute("id", index);
-        cellElement.addEventListener("click", () => handleCellClick(index));
-        cellElement.innerText = cell;
-        boardContainer.appendChild(cellElement);
+    cells.forEach(cell => {
+        cell.textContent = "";  // Clear board
+        cell.addEventListener("click", handleCellClick);
     });
+
+    document.getElementById("restart").classList.add("hidden");
+
+    // Set initial turn message
+    document.getElementById("turn-indicator").textContent = `${player1Name}, you're up!`;
 }
 
-function handleCellClick(index) {
-    if (board[index] !== "" || !gameActive) return;
+function handleCellClick(event) {
+    const cell = event.target;
 
-    board[index] = currentPlayer === player1 ? "X" : "O";
-    createBoard();
+    if (cell.textContent !== "") return; // Prevent overwriting moves
 
-    if (checkWin()) {
-        document.getElementById("message").innerText = `${currentPlayer} congratulations you won!`;
-        gameActive = false;
+    cell.textContent = currentPlayer;
+
+    if (checkWinner()) {
+        let winnerName = currentPlayer === "X" ? player1Name : player2Name;
+        document.querySelector(".message").textContent = `${winnerName}, congratulations you won!`;
+        setTimeout(() => alert(`${winnerName}, congratulations you won!`), 100);
+        endGame();
         return;
     }
 
-    if (board.every(cell => cell !== "")) {
-        document.getElementById("message").innerText = "It's a draw!";
-        gameActive = false;
+    if ([...cells].every(cell => cell.textContent !== "")) {
+        document.querySelector(".message").textContent = "It's a draw!";
+        setTimeout(() => alert("It's a draw!"), 100);
+        endGame();
         return;
     }
 
-    currentPlayer = currentPlayer === player1 ? player2 : player1;
-    document.getElementById("message").innerText = `${currentPlayer}, you're up`;
+    // Switch turns
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    let nextPlayerName = currentPlayer === "X" ? player1Name : player2Name;
+
+    // Update turn message
+    document.getElementById("turn-indicator").textContent = `${nextPlayerName}, you're up!`;
 }
 
-function checkWin() {
-    const winPatterns = [
+function checkWinner() {
+    const winningCombos = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
         [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
         [0, 4, 8], [2, 4, 6]             // Diagonals
     ];
 
-    return winPatterns.some(pattern => {
-        const [a, b, c] = pattern;
-        return board[a] !== "" && board[a] === board[b] && board[a] === board[c];
+    return winningCombos.some(combo => {
+        return cells[combo[0]].textContent !== "" &&
+               cells[combo[0]].textContent === cells[combo[1]].textContent &&
+               cells[combo[1]].textContent === cells[combo[2]].textContent;
     });
 }
 
-function resetGame() {
-    board = ["", "", "", "", "", "", "", "", ""];
-    gameActive = true;
-    currentPlayer = player1;
-    document.getElementById("message").innerText = `${currentPlayer}, you're up`;
-    createBoard();
+function endGame() {
+    cells.forEach(cell => cell.removeEventListener("click", handleCellClick));
+    document.getElementById("restart").classList.remove("hidden");
 }
+
+document.getElementById("restart").addEventListener("click", function() {
+    currentPlayer = "X";
+    startGame();
+    document.getElementById("turn-indicator").textContent = `${player1Name}, you're up!`;
+});
